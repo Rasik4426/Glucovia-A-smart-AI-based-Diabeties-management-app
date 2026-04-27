@@ -1,31 +1,48 @@
-**Welcome to your Base44 project** 
+# 🩺 Glucovia – Smart Diabetes Management App
 
-**About**
+Glucovia is a modern health tracking application designed to help children with diabetes, parents, and doctors manage and monitor glucose levels effectively.
 
-View and Edit  your app on [Base44.com](http://Base44.com) 
+---
 
-This project contains everything you need to run your app locally.
+## 🚀 Features
 
-**Edit the code in your local development environment**
+### 👶 Child Dashboard
+- Log glucose levels 🩸
+- Track meals 🍱
+- Manage insulin 💉
+- Gamification & rewards 🎮
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+### 👨‍👩‍👧 Parent Dashboard
+- Monitor child health data
+- Get alerts & reports
 
-**Prerequisites:** 
+### 🩺 Doctor Dashboard
+- View patient analytics
+- Chat with patients
 
-1. Clone the repository using the project's Git URL 
-2. Navigate to the project directory
-3. Install dependencies: `npm install`
-4. Create an `.env.local` file and set the right environment variables
+### 📊 Additional Features
+- Real-time tracking
+- Reports & insights
+- Notifications & reminders
+- Offline support
 
-```
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=your_backend_url
+---
 
-e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
-```
+## 🛠 Tech Stack
 
+- Frontend: React + Vite
+- Backend: Base44
+- Styling: Tailwind CSS
+- State Management: React Query
+
+---
+
+## ⚙️ Setup Instructions
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/Rasik4426/glucovia-app.git
+cd glucovia-app
 Run the app: `npm run dev`
 
 **Publish your changes**
