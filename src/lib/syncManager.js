@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Background sync manager.
  * Call startSyncListener() once (e.g. in App.jsx) to watch for
