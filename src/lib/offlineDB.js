@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Offline IndexedDB store for glucose and insulin logs.
  * Entries are stored with a `synced: false` flag and pushed

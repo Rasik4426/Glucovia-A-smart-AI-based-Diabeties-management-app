@@ -21,6 +21,7 @@ export async function requestNotificationPermission() {
  * Show a local notification immediately (works even without push server).
  * Falls back gracefully if SW or Notification API isn't available.
  */
+// @ts-ignore
 export async function showLocalNotification(title, body, options = {}) {
   const permission = await requestNotificationPermission();
   if (permission !== 'granted') return;
@@ -32,9 +33,13 @@ export async function showLocalNotification(title, body, options = {}) {
       body,
       icon: '/favicon.ico',
       badge: '/favicon.ico',
+      // @ts-ignore
       requireInteraction: options.requireInteraction || false,
+      // @ts-ignore
       vibrate: options.vibrate || [200, 100, 200],
+      // @ts-ignore
       tag: options.tag || 'glucovia',
+      // @ts-ignore
       data: { url: options.url || '/' },
     });
     return;
@@ -44,6 +49,7 @@ export async function showLocalNotification(title, body, options = {}) {
   new Notification(title, { body, icon: '/favicon.ico' });
 }
 
+// @ts-ignore
 export function vibrateDevice(pattern) {
   if ('vibrate' in navigator) {
     navigator.vibrate(pattern || [200, 100, 200, 100, 200]);

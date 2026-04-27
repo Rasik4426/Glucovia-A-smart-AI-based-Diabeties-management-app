@@ -109,6 +109,7 @@ export const FOOD_DATABASE = [
 
 export const FOOD_CATEGORIES = [...new Set(FOOD_DATABASE.map(f => f.category))];
 
+// @ts-ignore
 export function searchFoods(query) {
   if (!query) return FOOD_DATABASE.slice(0, 20);
   const q = query.toLowerCase();

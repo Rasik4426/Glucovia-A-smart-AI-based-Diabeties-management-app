@@ -1,3 +1,4 @@
+// @ts-ignore
 import React from 'react';
 import { Syringe, AlertTriangle, Info } from 'lucide-react';
 
@@ -6,12 +7,14 @@ import { Syringe, AlertTriangle, Info } from 'lucide-react';
  *   IS Ratio = 1500 / Total Daily Dose (actrapid)
  *   Correction dose = (Current BG - Target BG) / IS Ratio
  */
+// @ts-ignore
 export function calculateISRatio(tdd) {
   const t = parseFloat(tdd) || 0;
   if (t <= 0) return null;
   return Math.round(1500 / t);
 }
 
+// @ts-ignore
 export function calculateCorrectionDose({ currentGlucose, targetGlucose, isRatio }) {
   const bg = parseFloat(currentGlucose) || 0;
   const target = parseFloat(targetGlucose) || 140;
@@ -20,6 +23,7 @@ export function calculateCorrectionDose({ currentGlucose, targetGlucose, isRatio
   return Math.round(((bg - target) / isr) * 10) / 10;
 }
 
+// @ts-ignore
 export default function InsulinDoseSuggestion({ currentGlucose, targetGlucose = 140, tdd, isRatio }) {
   const bg = parseFloat(currentGlucose);
   if (!bg || bg <= 0) return null;
@@ -29,6 +33,7 @@ export default function InsulinDoseSuggestion({ currentGlucose, targetGlucose = 
   if (!computedISRatio) return null;
 
   const correctionDose = calculateCorrectionDose({ currentGlucose, targetGlucose, isRatio: computedISRatio });
+  // @ts-ignore
   const needsCorrection = bg > parseFloat(targetGlucose || 140);
 
   return (

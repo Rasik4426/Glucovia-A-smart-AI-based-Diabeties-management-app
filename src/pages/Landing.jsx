@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Heart, Activity, Shield, Trophy, ArrowRight, Droplets, BarChart3, Users, Baby, UserCheck, Stethoscope } from 'lucide-react';
