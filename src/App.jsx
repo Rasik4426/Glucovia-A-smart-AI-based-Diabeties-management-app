@@ -23,7 +23,7 @@ import MedicalDocuments from './pages/MedicalDocuments';
 import { startSyncListener } from '@/lib/syncManager';
 
 // Start background sync once (fires immediately if online with pending entries)
-startSyncListener();
+import { useEffect } from "react";
 
 const RoleRedirect = () => {
   const { user, isLoadingAuth } = useAuth();
@@ -91,6 +91,12 @@ const AuthenticatedApp = () => {
 
 
 function App() {
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      startSyncListener();
+    }
+  }, []);
 
   return (
     <AuthProvider>

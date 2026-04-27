@@ -70,11 +70,17 @@ let _started = false;
 
 export function startSyncListener() {
   if (_started) return;
+
+  // 🚨 prevent running during build / SSR
+  if (typeof window === "undefined") return;
+
   _started = true;
 
-  // Try immediately in case we're already online with stale data
+  // Try immediately if online
   if (navigator.onLine) {
-    getPendingCount().then(n => { if (n > 0) syncNow(); });
+    getPendingCount().then(n => {
+      if (n > 0) syncNow();
+    });
   }
 
   window.addEventListener('online', () => {
