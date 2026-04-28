@@ -70,11 +70,14 @@ const handleContinue = async () => {
     }
     console.log("Auth User:", authUser);
 
-    const existingUsers = await filterUsers(
-  { email: authUser.email },
-  null,
-  
-);
+let existingUsers = [];
+
+try {
+  existingUsers = await filterUsers({ email: authUser.email });
+} catch (err) {
+  console.error("Filter error:", err);
+}
+
 console.log("Existing Users:", existingUsers);
 console.log("Selected Role:", selected);
 
@@ -92,23 +95,33 @@ if (!selected) {
   alert("Please select a role");
   return;
 }
-    await createUser({
-      email: authUser.email,
-      role: selected,
-      full_name: authUser.name || "User",
-      target_glucose_min: 80,
-      target_glucose_max: 140,
-      insulin_sensitivity: 50,
-      carb_ratio: 10,
-      streak_days: 0,
-      points: 0,
-      last_log_date: new Date().toISOString()
-    });
+    const result = await createUser({
+       email: authUser.email,
+       role: selected,
+       full_name: authUser.name || "User",
+       target_glucose_min: 80,
+       target_glucose_max: 140,
+       insulin_sensitivity: 50,
+       carb_ratio: 10,
+       streak_days: 0,
+       points: 0,
+       last_log_date: new Date().toISOString()
+     });
+      
+
+console.log("User created:", result);
     // small delay to ensure DB sync
 await new Promise(res => setTimeout(res, 500));
+ if (selected === "child") {
+  window.location.href = "/ChildDashboard";
+} else if (selected === "parent") {
+  window.location.href = "/ParentDashboard";
+} else if (selected === "doctor") {
+  window.location.href = "/DoctorDashboard";
+}
 
-    window.location.href = "/ChildDashboard";
 
+   
   } catch (error) {
     console.error("Error in Continue:", error);
     alert("Something went wrong. Check console.");
@@ -155,7 +168,7 @@ await new Promise(res => setTimeout(res, 500));
 
         <Button
           onClick={handleContinue}
-          disabled={!selected || saving}
+          disabled={!selected || saving||isLoadingAuth}
           className="w-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 rounded-full h-12 text-base shadow-lg shadow-teal-200"
         >
           {saving ? 'Setting up...' : 'Continue'}
