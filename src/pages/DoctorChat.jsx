@@ -1,6 +1,5 @@
 // @ts-ignore
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Send, ArrowLeft, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -8,6 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
+import {
+  me, updateMe, isAuthenticated, logout, navigateToLogin,
+  listUsers, filterUsers, createUser,
+  createGlucoseLog, filterGlucoseLogs,
+  createInsulinLog, filterInsulinLogs,
+  createMealLog, filterMealLogs,
+  createReminder, filterParentReminders, updateParentReminder,
+  sendMessage, filterChatMessages,
+  filterMedicalDocuments, deleteDocument, uploadFile,
+  createReward,
+  filterReminders, createSelfReminder, updateSelfReminder, deleteSelfReminder
+} from '@/api/api';
 
 export default function DoctorChat() {
   const [message, setMessage] = useState('');
@@ -18,7 +29,7 @@ export default function DoctorChat() {
   // ── 1. Current user ──────────────────────────────────────────────
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => me(),
   });
   // @ts-ignore
   const email = user?.email;
@@ -29,7 +40,7 @@ export default function DoctorChat() {
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
     // @ts-ignore
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => listUsers(),
     enabled: !!email,
   });
 
@@ -37,7 +48,7 @@ export default function DoctorChat() {
   const { data: sentMessages = [] } = useQuery({
     queryKey: ['chatSent', email],
     // @ts-ignore
-    queryFn: () => base44.entities.ChatMessage.filter({ from_email: email }, '-sent_at', 500),
+    queryFn: () => filterChatMessages({ from_email: email }, '-sent_at', 500),
     enabled: !!email,
     refetchInterval: 3000,
   });
@@ -46,7 +57,7 @@ export default function DoctorChat() {
   const { data: receivedMessages = [] } = useQuery({
     queryKey: ['chatReceived', email],
     // @ts-ignore
-    queryFn: () => base44.entities.ChatMessage.filter({ to_email: email }, '-sent_at', 500),
+    queryFn: () => filterChatMessages({ to_email: email }, '-sent_at', 500),
     enabled: !!email,
     refetchInterval: 3000,
   });
@@ -119,7 +130,7 @@ export default function DoctorChat() {
   // ── 7. Send message ───────────────────────────────────────────────
   const sendMutation = useMutation({
     // @ts-ignore
-    mutationFn: (msg) => base44.entities.ChatMessage.create({
+    mutationFn: (msg) => sendMessage({
       from_email: email,
       // @ts-ignore
       to_email: selectedContact.email,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+content = r'''import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { me, logout } from '@/api/api';
 import { useQuery } from '@tanstack/react-query';
@@ -62,7 +62,6 @@ export default function Layout() {
             <h1 className="font-bold text-lg text-slate-800 leading-tight">Glucovia</h1>
             <p className="text-xs text-slate-400 capitalize">{role} Portal</p>
           </div>
-        </div>
 
         <nav className="flex-1 space-y-1">
           {nav.map(item => {
@@ -93,7 +92,6 @@ export default function Layout() {
               <p className="text-sm font-medium text-slate-700 truncate">{user?.full_name || 'User'}</p>
               <p className="text-xs text-slate-400 truncate">{user?.email}</p>
             </div>
-          </div>
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-2 rounded-xl text-sm text-slate-500 hover:bg-red-50 hover:text-red-600 w-full transition-colors"
@@ -147,7 +145,6 @@ export default function Layout() {
               Log Out
             </button>
           </div>
-        </div>
       )}
 
       {/* Main content */}
@@ -159,4 +156,8 @@ export default function Layout() {
     </div>
   );
 }
+'''
 
+with open('Layout.jsx', 'w', encoding='utf-8') as f:
+    f.write(content)
+print('Layout.jsx fixed')

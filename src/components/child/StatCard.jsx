@@ -1,5 +1,7 @@
+// @ts-ignore
 import React from 'react';
 
+// @ts-ignore
 export default function StatCard({ icon: Icon, label, value, unit, color, bgColor }) {
   return (
     <div className={`${bgColor} rounded-2xl p-5 relative overflow-hidden`}>

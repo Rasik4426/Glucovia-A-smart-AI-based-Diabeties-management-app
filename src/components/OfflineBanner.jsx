@@ -31,6 +31,7 @@ export default function OfflineBanner() {
 
   // Listen for sync events
   useEffect(() => {
+    /** @param {{ syncing?: boolean; synced?: number }} status */
     const unsub = onSyncStatusChange((status) => {
       if (status.syncing) {
         setSyncState('syncing');

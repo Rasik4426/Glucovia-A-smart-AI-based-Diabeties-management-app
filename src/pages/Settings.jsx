@@ -1,8 +1,7 @@
 // @ts-ignore
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { me, updateMe } from '@/api/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-// @ts-ignore
 import { Settings as SettingsIcon, User, Target, Plus, X, Syringe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,26 +12,21 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => me(),
   });
 
-  // @ts-ignore
   const [targetMin, setTargetMin] = useState(user?.target_glucose_min || 70);
-  // @ts-ignore
   const [targetMax, setTargetMax] = useState(user?.target_glucose_max || 180);
-  // @ts-ignore
-  const [isf, setIsf] = useState(user?.insulin_sensitivity_factor || 50);
-  // @ts-ignore
+  const [isf, setIsf] = useState(user?.insulin_sensitivity || 50);
   const [icr, setIcr] = useState(user?.carb_ratio || 15);
   const [newChild, setNewChild] = useState('');
-  // @ts-ignore
   const linkedEmails = user?.linked_child_emails || [];
 
   const saveTargets = async () => {
-    await base44.auth.updateMe({
+    await updateMe({
       target_glucose_min: parseFloat(targetMin),
       target_glucose_max: parseFloat(targetMax),
-      insulin_sensitivity_factor: parseFloat(isf),
+      insulin_sensitivity: parseFloat(isf),
       carb_ratio: parseFloat(icr),
     });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
@@ -41,16 +35,14 @@ export default function Settings() {
 
   const addChild = async () => {
     if (!newChild) return;
-    await base44.auth.updateMe({ linked_child_emails: [...linkedEmails, newChild] });
+    await updateMe({ linked_child_emails: [...linkedEmails, newChild] });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     setNewChild('');
     toast.success('Child linked!');
   };
 
-  // @ts-ignore
   const removeChild = async (email) => {
-    // @ts-ignore
-    await base44.auth.updateMe({ linked_child_emails: linkedEmails.filter(e => e !== email) });
+    await updateMe({ linked_child_emails: linkedEmails.filter(e => e !== email) });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     toast.success('Removed');
   };
@@ -65,15 +57,9 @@ export default function Settings() {
           <h2 className="font-bold text-slate-800">Profile</h2>
         </div>
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <div><span className="text-slate-400">Name</span><p className="font-medium text-slate-700">{user?.
-// @ts-ignore
-          full_name}</p></div>
-          <div><span className="text-slate-400">Email</span><p className="font-medium text-slate-700">{user?.
-// @ts-ignore
-          email}</p></div>
-          <div><span className="text-slate-400">Role</span><p className="font-medium text-slate-700 capitalize">{user?.
-// @ts-ignore
-          role}</p></div>
+          <div><span className="text-slate-400">Name</span><p className="font-medium text-slate-700">{user?.full_name}</p></div>
+          <div><span className="text-slate-400">Email</span><p className="font-medium text-slate-700">{user?.email}</p></div>
+          <div><span className="text-slate-400">Role</span><p className="font-medium text-slate-700 capitalize">{user?.role}</p></div>
         </div>
       </div>
 
@@ -84,30 +70,18 @@ export default function Settings() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <
-// @ts-ignore
-            Label>Min (mg/dL)</Label>
-            <Input 
-// @ts-ignore
-            type="number" value={targetMin} onChange={e => setTargetMin(e.target.value)} className="rounded-xl" />
+            <Label>Min (mg/dL)</Label>
+            <Input type="number" value={targetMin} onChange={e => setTargetMin(e.target.value)} className="rounded-xl" />
           </div>
           <div className="space-y-2">
-            <
-// @ts-ignore
-            Label>Max (mg/dL)</Label>
-            <Input 
-// @ts-ignore
-            type="number" value={targetMax} onChange={e => setTargetMax(e.target.value)} className="rounded-xl" />
+            <Label>Max (mg/dL)</Label>
+            <Input type="number" value={targetMax} onChange={e => setTargetMax(e.target.value)} className="rounded-xl" />
           </div>
         </div>
-        <
-// @ts-ignore
-        Button onClick={saveTargets} className="rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500">Save Targets</Button>
+        <Button onClick={saveTargets} className="rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500">Save Targets</Button>
       </div>
 
-      {user?.
-// @ts-ignore
-      role === 'child' && (
+      {user?.role === 'child' && (
         <div className="bg-white rounded-2xl p-5 border border-slate-100 space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <Syringe className="w-5 h-5 text-purple-500" />
@@ -116,53 +90,33 @@ export default function Settings() {
           <p className="text-xs text-slate-500">Set with your doctor's guidance. These values are used to calculate insulin dose suggestions.</p>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <
-// @ts-ignore
-              Label>Sensitivity Factor (ISF)</Label>
-              <Input 
-// @ts-ignore
-              type="number" value={isf} onChange={e => setIsf(e.target.value)} className="rounded-xl" placeholder="50" />
+              <Label>Sensitivity Factor (ISF)</Label>
+              <Input type="number" value={isf} onChange={e => setIsf(e.target.value)} className="rounded-xl" placeholder="50" />
               <p className="text-xs text-slate-400">mg/dL drop per 1 unit</p>
             </div>
             <div className="space-y-2">
-              <
-// @ts-ignore
-              Label>Carb Ratio (ICR)</Label>
-              <Input 
-// @ts-ignore
-              type="number" value={icr} onChange={e => setIcr(e.target.value)} className="rounded-xl" placeholder="15" />
+              <Label>Carb Ratio (ICR)</Label>
+              <Input type="number" value={icr} onChange={e => setIcr(e.target.value)} className="rounded-xl" placeholder="15" />
               <p className="text-xs text-slate-400">grams carbs per 1 unit</p>
             </div>
           </div>
-          <
-// @ts-ignore
-          Button onClick={saveTargets} className="rounded-xl bg-gradient-to-r from-purple-500 to-violet-500">Save Insulin Settings</Button>
+          <Button onClick={saveTargets} className="rounded-xl bg-gradient-to-r from-purple-500 to-violet-500">Save Insulin Settings</Button>
         </div>
       )}
 
-      {(user?.
-// @ts-ignore
-      role === 'parent' || user?.role === 'doctor') && (
+      {(user?.role === 'parent' || user?.role === 'doctor') && (
         <div className="bg-white rounded-2xl p-5 border border-slate-100 space-y-4">
           <h2 className="font-bold text-slate-800">Linked Children</h2>
           <div className="flex gap-2">
-            <Input 
-// @ts-ignore
-            placeholder="child@email.com" value={newChild} onChange={e => setNewChild(e.target.value)} className="rounded-xl" />
-            <
-// @ts-ignore
-            Button onClick={addChild} className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500">
+            <Input placeholder="child@email.com" value={newChild} onChange={e => setNewChild(e.target.value)} className="rounded-xl" />
+            <Button onClick={addChild} className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500">
               <Plus className="w-4 h-4" />
             </Button>
           </div>
-          {linkedEmails.map(
-// @ts-ignore
-          email => (
+          {linkedEmails.map(email => (
             <div key={email} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-2">
               <span className="text-sm text-slate-700">{email}</span>
-              <
-// @ts-ignore
-              Button variant="ghost" size="icon" onClick={() => removeChild(email)}>
+              <Button variant="ghost" size="icon" onClick={() => removeChild(email)}>
                 <X className="w-4 h-4 text-red-400" />
               </Button>
             </div>
@@ -172,3 +126,4 @@ export default function Settings() {
     </div>
   );
 }
+

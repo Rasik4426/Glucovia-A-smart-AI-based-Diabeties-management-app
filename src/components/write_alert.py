@@ -1,5 +1,6 @@
-/**
- * GlucoseAlertSystem - simplified for build
+content = r'''/**
+ * GlucoseAlertSystem
+ * Mounts invisibly on all 3 dashboards (child / parent / doctor).
  */
 // @ts-nocheck
 import React, { useEffect, useRef, useState } from 'react';
@@ -206,9 +207,11 @@ export default function GlucoseAlertSystem({ userEmail, role }) {
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: -80, opacity: 0 }}
-        className={'fixed top-0 left-0 right-0 z-50 p-4 shadow-2xl ' + (sosAlert.isLow
+        className={`fixed top-0 left-0 right-0 z-50 p-4 shadow-2xl ${
+          sosAlert.isLow
             ? 'bg-gradient-to-r from-red-600 to-rose-600'
-            : 'bg-gradient-to-r from-orange-500 to-amber-500')}
+            : 'bg-gradient-to-r from-orange-500 to-amber-500'
+        }`}
       >
         <div className="max-w-lg mx-auto">
           <div className="flex items-start gap-3">
@@ -221,7 +224,7 @@ export default function GlucoseAlertSystem({ userEmail, role }) {
               <div className="flex gap-2 mt-3 flex-wrap">
                 {sosAlert.doctorPhone && (
                   <a
-                    href={'tel:' + sosAlert.doctorPhone}
+                    href={`tel:${sosAlert.doctorPhone}`}
                     className="flex items-center gap-1.5 bg-white text-red-600 rounded-full px-4 py-2 text-sm font-bold shadow-md active:scale-95 transition-transform"
                   >
                     <Phone className="w-4 h-4" />
@@ -235,7 +238,6 @@ export default function GlucoseAlertSystem({ userEmail, role }) {
                   Emergency (911)
                 </a>
               </div>
-            </div>
             <button
               onClick={() => setSosAlert(null)}
               className="text-white/80 hover:text-white ml-2 flex-shrink-0"
@@ -243,8 +245,12 @@ export default function GlucoseAlertSystem({ userEmail, role }) {
               <X className="w-5 h-5" />
             </button>
           </div>
-        </div>
       </motion.div>
     </AnimatePresence>
   );
 }
+'''
+
+with open('GlucoseAlertSystem.jsx', 'w', encoding='utf-8') as f:
+    f.write(content)
+print('Done')

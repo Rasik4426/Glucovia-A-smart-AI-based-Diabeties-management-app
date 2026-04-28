@@ -1,6 +1,5 @@
 // @ts-ignore
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 // @ts-ignore
 import { Stethoscope, Users, Plus, Droplets, TrendingUp, AlertTriangle, Activity, Trash2, MessageCircle, Send, Phone, Save } from 'lucide-react';
@@ -8,13 +7,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import GlucoseChart from '../components/child/GlucoseChart';
-import StatCard from '../components/child/StatCard';
+import GlucoseChart from '@/components/child/GlucoseChart';
+import StatCard from '@/components/child/StatCard';
 import { Link } from 'react-router-dom';
-import GlucoseAlertSystem from '../components/GlucoseAlertSystem';
-import NotificationPermissionBanner from '../components/NotificationPermissionBanner';
+import GlucoseAlertSystem from '@/components/GlucoseAlertSystem';
+import NotificationPermissionBanner from '@/components/NotificationPermissionBanner';
 import { toast } from 'sonner';
 import { useMutation } from '@tanstack/react-query';
+import {
+  me, updateMe, isAuthenticated, logout, navigateToLogin,
+  listUsers, filterUsers, createUser,
+  createGlucoseLog, filterGlucoseLogs,
+  createInsulinLog, filterInsulinLogs,
+  createMealLog, filterMealLogs,
+  createReminder, filterParentReminders, updateParentReminder,
+  sendMessage, filterChatMessages,
+  filterMedicalDocuments, deleteDocument, uploadFile,
+  createReward,
+  filterReminders, createSelfReminder, updateSelfReminder, deleteSelfReminder
+} from '@/api/api';
 
 export default function DoctorDashboard() {
   const [patientEmail, setPatientEmail] = useState('');
@@ -30,7 +41,7 @@ export default function DoctorDashboard() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => me(),
     // @ts-ignore
     onSuccess: (u) => { if (u?.phone_number && !phone) setPhone(u.phone_number); }
   });
@@ -39,7 +50,7 @@ export default function DoctorDashboard() {
     // @ts-ignore
     queryKey: ['doctorAlerts', user?.email],
     // @ts-ignore
-    queryFn: () => base44.entities.ParentReminder.filter({ to_email: user.email }, '-sent_at', 20),
+    queryFn: () => filterParentReminders({ to_email: user.email }, '-sent_at', 20),
     // @ts-ignore
     enabled: !!user?.email,
     refetchInterval: 15000,
@@ -48,14 +59,14 @@ export default function DoctorDashboard() {
   const unreadDoctorAlerts = doctorAlerts.filter(a => !a.is_read && a.message?.includes('ALERT'));
   const markDoctorAlertsRead = async () => {
     // @ts-ignore
-    await Promise.all(unreadDoctorAlerts.map(a => base44.entities.ParentReminder.update(a.id, { is_read: true })));
+    await Promise.all(unreadDoctorAlerts.map(a => updateParentReminder(a.id, { is_read: true })));
     queryClient.invalidateQueries({ queryKey: ['doctorAlerts'] });
     setShowAlerts(false);
   };
 
   const savePhone = async () => {
     setSavingPhone(true);
-    await base44.auth.updateMe({ phone_number: phone });
+    await updateMe({ phone_number: phone });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     setSavingPhone(false);
     toast.success('Phone number saved! Patients can now call you. 📞');
@@ -67,14 +78,14 @@ export default function DoctorDashboard() {
   const { data: glucoseLogs = [] } = useQuery({
     queryKey: ['glucoseLogs', selectedPatient],
     // @ts-ignore
-    queryFn: () => base44.entities.GlucoseLog.filter({ user_email: selectedPatient }, '-log_date', 100),
+    queryFn: () => filterGlucoseLogs({ user_email: selectedPatient }, '-log_date', 100),
     enabled: !!selectedPatient,
   });
 
   const addPatient = async () => {
     if (!patientEmail) return;
     const updated = [...patients, patientEmail];
-    await base44.auth.updateMe({ linked_child_emails: updated });
+    await updateMe({ linked_child_emails: updated });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     setPatientEmail('');
     setOpen(false);
@@ -85,7 +96,7 @@ export default function DoctorDashboard() {
   const removePatient = async (email) => {
     // @ts-ignore
     const updated = patients.filter(e => e !== email);
-    await base44.auth.updateMe({ linked_child_emails: updated });
+    await updateMe({ linked_child_emails: updated });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     if (selectedPatient === email) setSelectedPatient(null);
     toast.success('Patient removed');
@@ -93,7 +104,7 @@ export default function DoctorDashboard() {
 
   const sendReminderMutation = useMutation({
     // @ts-ignore
-    mutationFn: () => base44.entities.ParentReminder.create({
+    mutationFn: () => createReminder({
       // @ts-ignore
       from_email: user.email,
       to_email: selectedPatient,

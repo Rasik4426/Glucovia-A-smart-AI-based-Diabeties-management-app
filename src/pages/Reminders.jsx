@@ -1,6 +1,5 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, Plus, Trash2, Droplets, Utensils, Syringe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import {
+  me,
+  filterReminders,
+  createSelfReminder,
+  updateSelfReminder,
+  deleteSelfReminder,
+} from '@/api/api';
 
 const typeIcons = { glucose_test: Droplets, meal: Utensils, insulin: Syringe };
 const typeColors = {
@@ -22,26 +28,27 @@ export default function Reminders() {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState('');
   const [time, setTime] = useState('');
-  const [label, setRLabel] = useState('');
+  const [title, setTitle] = useState('');
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => me(),
   });
 
   const { data: reminders = [] } = useQuery({
     queryKey: ['reminders', user?.email],
-    queryFn: () => base44.entities.Reminder.filter({ user_email: user.email }),
+    queryFn: () => filterReminders({ user_email: user.email }),
     enabled: !!user?.email,
   });
 
   const createMutation = useMutation({
-    mutationFn: () => base44.entities.Reminder.create({
+    mutationFn: () => createSelfReminder({
       user_email: user.email,
-      reminder_type: type,
-      time,
-      label: label || undefined,
+      title: title || type.replace('_', ' '),
+      description: type,
+      reminder_time: time,
+      reminder_date: new Date().toISOString().split('T')[0],
       is_active: true,
     }),
     onSuccess: () => {
@@ -49,18 +56,18 @@ export default function Reminders() {
       setOpen(false);
       setType('');
       setTime('');
-      setRLabel('');
+      setTitle('');
       toast.success('Reminder created!');
     },
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, is_active }) => base44.entities.Reminder.update(id, { is_active }),
+    mutationFn: ({ id, is_active }) => updateSelfReminder(id, { is_active }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reminders'] }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Reminder.delete(id),
+    mutationFn: (id) => deleteSelfReminder(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders'] });
       toast.success('Reminder deleted');
@@ -98,8 +105,8 @@ export default function Reminders() {
                 <Input type="time" value={time} onChange={e => setTime(e.target.value)} className="rounded-xl" />
               </div>
               <div className="space-y-2">
-                <Label>Label (optional)</Label>
-                <Input placeholder="e.g. Morning check" value={label} onChange={e => setRLabel(e.target.value)} className="rounded-xl" />
+                <Label>Title (optional)</Label>
+                <Input placeholder="e.g. Morning check" value={title} onChange={e => setTitle(e.target.value)} className="rounded-xl" />
               </div>
               <Button
                 onClick={() => createMutation.mutate()}
@@ -121,15 +128,15 @@ export default function Reminders() {
       ) : (
         <div className="space-y-3">
           {reminders.map(r => {
-            const Icon = typeIcons[r.reminder_type] || Bell;
+            const Icon = typeIcons[r.description] || typeIcons[r.reminder_type] || Bell;
             return (
               <div key={r.id} className="bg-white rounded-2xl p-4 border border-slate-100 flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${typeColors[r.reminder_type] || 'bg-slate-100 text-slate-500'}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${typeColors[r.description] || typeColors[r.reminder_type] || 'bg-slate-100 text-slate-500'}`}>
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-700 text-sm">{r.label || r.reminder_type?.replace('_', ' ')}</p>
-                  <p className="text-xs text-slate-400">{r.time}</p>
+                  <p className="font-medium text-slate-700 text-sm">{r.title || r.reminder_type?.replace('_', ' ')}</p>
+                  <p className="text-xs text-slate-400">{r.reminder_time}</p>
                 </div>
                 <Switch
                   checked={r.is_active}
@@ -146,3 +153,4 @@ export default function Reminders() {
     </div>
   );
 }
+

@@ -1,6 +1,5 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Droplets, Utensils, Syringe, Check, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -17,6 +16,18 @@ import GlucoseFeedback from '@/components/child/GlucoseFeedback';
 import EmojiPop, { useEmojiPop } from '@/components/child/EmojiPop';
 import OfflineBanner from '@/components/OfflineBanner';
 import { saveGlucosePending, saveInsulinPending } from '@/lib/offlineDB';
+import {
+  me, updateMe, isAuthenticated, logout, navigateToLogin,
+  listUsers, filterUsers, createUser,
+  createGlucoseLog, filterGlucoseLogs,
+  createInsulinLog, filterInsulinLogs,
+  createMealLog, filterMealLogs,
+  createReminder, filterParentReminders, updateParentReminder,
+  sendMessage, filterChatMessages,
+  filterMedicalDocuments, deleteDocument, uploadFile,
+  createReward,
+  filterReminders, createSelfReminder, updateSelfReminder, deleteSelfReminder
+} from '@/api/api';
 
 const tabs = [
   { id: 'glucose', label: 'Glucose', icon: Droplets, color: 'from-teal-400 to-emerald-500' },
@@ -35,12 +46,12 @@ export default function LogEntry() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => me(),
   });
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => listUsers(),
     enabled: !!user,
   });
 
@@ -59,7 +70,7 @@ export default function LogEntry() {
     const recipients = [...parents, ...doctors];
 
     await Promise.all(recipients.map(r =>
-      base44.entities.ParentReminder.create({
+      createReminder({
         from_email: user.email,
         to_email: r.email,
         message: alertMsg,
@@ -96,7 +107,7 @@ export default function LogEntry() {
     if (lastLog === yesterday) newStreak += 1;
     else if (lastLog !== today) newStreak = 1;
     const newPoints = (user?.points || 0) + 10;
-    await base44.auth.updateMe({ streak_days: newStreak, last_log_date: today, points: newPoints });
+    await updateMe({ streak_days: newStreak, last_log_date: today, points: newPoints });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
   };
 
@@ -113,7 +124,7 @@ export default function LogEntry() {
         await saveGlucosePending(payload);
         return { offline: true };
       }
-      return base44.entities.GlucoseLog.create(payload);
+      return createGlucoseLog(payload);
     },
     onSuccess: async (result) => {
       const level = parseFloat(glucoseLevel);
@@ -134,7 +145,7 @@ export default function LogEntry() {
   });
 
   const mealMutation = useMutation({
-    mutationFn: () => base44.entities.MealLog.create({
+    mutationFn: () => createMealLog({
       user_email: user.email,
       meal_type: mealType || undefined,
       food_items: foodItems || undefined,
@@ -163,7 +174,7 @@ export default function LogEntry() {
         await saveInsulinPending(payload);
         return { offline: true };
       }
-      return base44.entities.InsulinLog.create(payload);
+      return createInsulinLog(payload);
     },
     onSuccess: async (result) => {
       if (result?.offline) {

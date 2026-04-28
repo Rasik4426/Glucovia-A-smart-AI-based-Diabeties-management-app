@@ -1,10 +1,10 @@
 // @ts-ignore
 import React, { useState } from 'react';
-import { searchFoods } from '@/utils/foodDatabase';
+import { searchFoods } from '../../utils/foodDatabase';
 import { Plus, Minus, X, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Input } from '../ui/input';
 // @ts-ignore
-import { Button } from '@/components/ui/button';
+import { Button } from '../ui/button';
 
 // @ts-ignore
 export default function CarbCounter({ onTotalCarbsChange, onFoodItemsChange }) {

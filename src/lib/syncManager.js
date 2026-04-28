@@ -5,7 +5,10 @@
  * connectivity restoration and flush pending IndexedDB entries.
  */
 
-import { base44 } from '@/api/base44Client';
+import {
+  createGlucoseLog,
+  createInsulinLog,
+} from '@/api/api';
 import {
   getPendingGlucose,
   getPendingInsulin,
@@ -39,7 +42,7 @@ export async function syncNow() {
   const glucoseEntries = await getPendingGlucose();
   for (const entry of glucoseEntries) {
     const { localId, synced: _s, savedAt, ...payload } = entry;
-    const result = await base44.entities.GlucoseLog.create(payload);
+    const result = await createGlucoseLog(payload);
     if (result?.id) {
       await markGlucoseSynced(localId);
       synced++;
@@ -52,7 +55,7 @@ export async function syncNow() {
   const insulinEntries = await getPendingInsulin();
   for (const entry of insulinEntries) {
     const { localId, synced: _s, savedAt, ...payload } = entry;
-    const result = await base44.entities.InsulinLog.create(payload);
+    const result = await createInsulinLog(payload);
     if (result?.id) {
       await markInsulinSynced(localId);
       synced++;

@@ -1,6 +1,5 @@
 // @ts-ignore
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users, Link as LinkIcon, AlertTriangle, Send, MessageCircle, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,13 +9,25 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import StatCard from '../components/child/StatCard';
-import GlucoseChart from '../components/child/GlucoseChart';
+import StatCard from '@/components/child/StatCard';
+import GlucoseChart from '@/components/child/GlucoseChart';
 // @ts-ignore
 import { Droplets, TrendingUp, Utensils, Syringe } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import GlucoseAlertSystem from '../components/GlucoseAlertSystem';
-import NotificationPermissionBanner from '../components/NotificationPermissionBanner';
+import GlucoseAlertSystem from '@/components/GlucoseAlertSystem';
+import NotificationPermissionBanner from '@/components/NotificationPermissionBanner';
+import {
+  me, updateMe, isAuthenticated, logout, navigateToLogin,
+  listUsers, filterUsers, createUser,
+  createGlucoseLog, filterGlucoseLogs,
+  createInsulinLog, filterInsulinLogs,
+  createMealLog, filterMealLogs,
+  createReminder, filterParentReminders, updateParentReminder,
+  sendMessage, filterChatMessages,
+  filterMedicalDocuments, deleteDocument, uploadFile,
+  createReward,
+  filterReminders, createSelfReminder, updateSelfReminder, deleteSelfReminder
+} from '@/api/api';
 
 export default function ParentDashboard() {
   const [childEmailInput, setChildEmailInput] = useState('');
@@ -29,7 +40,7 @@ export default function ParentDashboard() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => me(),
   });
 
   // @ts-ignore
@@ -38,7 +49,7 @@ export default function ParentDashboard() {
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
     // @ts-ignore
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => listUsers(),
     enabled: !!user,
   });
 
@@ -49,21 +60,21 @@ export default function ParentDashboard() {
   const { data: glucoseLogs = [] } = useQuery({
     queryKey: ['glucoseLogsChild', activeChild],
     // @ts-ignore
-    queryFn: () => base44.entities.GlucoseLog.filter({ user_email: activeChild }, '-log_date', 50),
+    queryFn: () => filterGlucoseLogs({ user_email: activeChild }, '-log_date', 50),
     enabled: !!activeChild,
   });
 
   const { data: mealLogs = [] } = useQuery({
     queryKey: ['mealLogsChild', activeChild],
     // @ts-ignore
-    queryFn: () => base44.entities.MealLog.filter({ user_email: activeChild }, '-log_date', 20),
+    queryFn: () => filterMealLogs({ user_email: activeChild }, '-log_date', 20),
     enabled: !!activeChild,
   });
 
   const { data: insulinLogs = [] } = useQuery({
     queryKey: ['insulinLogsChild', activeChild],
     // @ts-ignore
-    queryFn: () => base44.entities.InsulinLog.filter({ user_email: activeChild }, '-log_date', 20),
+    queryFn: () => filterInsulinLogs({ user_email: activeChild }, '-log_date', 20),
     enabled: !!activeChild,
   });
 
@@ -71,7 +82,7 @@ export default function ParentDashboard() {
     // @ts-ignore
     queryKey: ['parentAlerts', user?.email],
     // @ts-ignore
-    queryFn: () => base44.entities.ParentReminder.filter({ to_email: user.email }, '-sent_at', 20),
+    queryFn: () => filterParentReminders({ to_email: user.email }, '-sent_at', 20),
     // @ts-ignore
     enabled: !!user?.email,
     refetchInterval: 15000,
@@ -82,13 +93,13 @@ export default function ParentDashboard() {
 
   const markAllRead = async () => {
     // @ts-ignore
-    await Promise.all(unreadAlerts.map(a => base44.entities.ParentReminder.update(a.id, { is_read: true })));
+    await Promise.all(unreadAlerts.map(a => updateParentReminder(a.id, { is_read: true })));
     queryClient.invalidateQueries({ queryKey: ['parentAlerts'] });
   };
 
   const linkChild = async () => {
     const updated = [...new Set([...linkedChildren, childEmailInput.trim()])];
-    await base44.auth.updateMe({ linked_children: updated });
+    await updateMe({ linked_children: updated });
     queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     setChildEmailInput('');
     setShowLink(false);
@@ -97,7 +108,7 @@ export default function ParentDashboard() {
 
   const sendReminderMutation = useMutation({
     // @ts-ignore
-    mutationFn: () => base44.entities.ParentReminder.create({
+    mutationFn: () => createReminder({
       // @ts-ignore
       from_email: user.email,
       to_email: activeChild,

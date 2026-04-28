@@ -1,11 +1,22 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params'; 
 import { Heart, Baby, Users, Stethoscope, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
+import {
+  me, updateMe, isAuthenticated, logout, navigateToLogin,
+  listUsers, filterUsers, createUser,
+  createGlucoseLog, filterGlucoseLogs,
+  createInsulinLog, filterInsulinLogs,
+  createMealLog, filterMealLogs,
+  createReminder, filterParentReminders, updateParentReminder,
+  sendMessage, filterChatMessages,
+  filterMedicalDocuments, deleteDocument, uploadFile,
+  createReward,
+  filterReminders, createSelfReminder, updateSelfReminder, deleteSelfReminder
+} from '@/api/api';
 
 
 
@@ -59,7 +70,7 @@ const handleContinue = async () => {
     }
     console.log("Auth User:", authUser);
 
-    const existingUsers = await base44.entities.User.filter(
+    const existingUsers = await filterUsers(
   { email: authUser.email },
   null,
   
@@ -81,7 +92,7 @@ if (!selected) {
   alert("Please select a role");
   return;
 }
-    await base44.entities.User.create({
+    await createUser({
       email: authUser.email,
       role: selected,
       full_name: authUser.name || "User",

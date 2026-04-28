@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { isAuthenticated, me } from '@/api/api';
 import { Heart, Activity, Shield, Trophy, ArrowRight, Droplets, BarChart3, Users, Baby, UserCheck, Stethoscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -25,9 +25,9 @@ export default function Landing() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (isAuth) {
-          const user = await base44.auth.me();
+        const auth = await isAuthenticated();
+        if (auth) {
+          const user = await me();
           const role = user?.role;
           if (role === 'parent') { window.location.replace('/ParentDashboard'); return; }
           if (role === 'doctor') { window.location.replace('/DoctorDashboard'); return; }
@@ -52,7 +52,13 @@ export default function Landing() {
   }
 
   const handleSignIn = () => {
-    base44.auth.redirectToLogin('/RoleSetup');
+    const redirectTo = `${window.location.origin}/RoleSetup`;
+    import('@/lib/supabaseClient').then(({ supabase }) => {
+      supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo }
+      });
+    });
   };
 
   return (

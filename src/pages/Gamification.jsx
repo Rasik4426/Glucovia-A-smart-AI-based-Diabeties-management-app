@@ -1,11 +1,22 @@
 // @ts-ignore
 import React from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 // @ts-ignore
 import { Trophy, Star, Award, Zap, Flame, Target, Heart, Droplets, Gift, CheckCircle } from 'lucide-react';
-import StreakBadge from '../components/child/StreakBadge';
+import StreakBadge from '@/components/child/StreakBadge';
 import { motion } from 'framer-motion';
+import {
+  me, updateMe, isAuthenticated, logout, navigateToLogin,
+  listUsers, filterUsers, createUser,
+  createGlucoseLog, filterGlucoseLogs,
+  createInsulinLog, filterInsulinLogs,
+  createMealLog, filterMealLogs,
+  createReminder, filterParentReminders, updateParentReminder,
+  sendMessage, filterChatMessages,
+  filterMedicalDocuments, deleteDocument, uploadFile,
+  createReward,
+  filterReminders, createSelfReminder, updateSelfReminder, deleteSelfReminder
+} from '@/api/api';
 
 // HbA1c-based tier system
 // HbA1c estimation from avg glucose: HbA1c ≈ (avg_glucose + 46.7) / 28.7
@@ -74,7 +85,7 @@ const coupons = [
 export default function Gamification() {
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => me(),
   });
 
   // @ts-ignore
@@ -87,14 +98,14 @@ export default function Gamification() {
   const { data: glucoseLogs = [] } = useQuery({
     queryKey: ['glucoseLogs', email],
     // @ts-ignore
-    queryFn: () => base44.entities.GlucoseLog.filter({ user_email: email }, '-log_date', 200),
+    queryFn: () => filterGlucoseLogs({ user_email: email }, '-log_date', 200),
     enabled: !!email,
   });
 
   const { data: mealLogs = [] } = useQuery({
     queryKey: ['mealLogs', email],
     // @ts-ignore
-    queryFn: () => base44.entities.MealLog.filter({ user_email: email }, '-log_date', 100),
+    queryFn: () => filterMealLogs({ user_email: email }, '-log_date', 100),
     enabled: !!email,
   });
 

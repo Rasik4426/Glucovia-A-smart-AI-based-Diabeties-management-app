@@ -1,11 +1,9 @@
 // @ts-ignore
 import React, { useState, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileText, Upload, Trash2, Download, ArrowLeft, Eye, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-// @ts-ignore
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,6 +11,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
+import {
+  me,
+  listUsers,
+  filterMedicalDocuments,
+  deleteDocument,
+  uploadDocument,
+} from '@/api/api';
 
 const docTypeLabels = {
   blood_test: '🩸 Blood Test',
@@ -45,53 +50,42 @@ export default function MedicalDocuments() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => me(),
   });
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
-    // @ts-ignore
-    queryFn: () => base44.entities.User.list(),
-    // @ts-ignore
+    queryFn: () => listUsers(),
     enabled: !!user?.email,
   });
 
-  // Doctor/parent can view any child they have linked; child views own docs
-  // @ts-ignore
   const role = user?.role || 'child';
   const linkedChildren = role === 'doctor'
-    // @ts-ignore
     ? (allUsers.find(u => u.email === user?.email)?.linked_child_emails || [])
     : role === 'parent'
-    // @ts-ignore
     ? (allUsers.find(u => u.email === user?.email)?.linked_children || [])
     : [];
 
   const [selectedChildEmail, setSelectedChildEmail] = useState('');
   const targetEmail = (role !== 'child')
-    // @ts-ignore
     ? (viewingChild || selectedChildEmail || linkedChildren[0] || user?.email)
-    // @ts-ignore
     : user?.email;
   const isViewer = role !== 'child';
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['medicalDocs', targetEmail],
-    // @ts-ignore
-    queryFn: () => base44.entities.MedicalDocument.filter({ user_email: targetEmail }, '-upload_date', 50),
+    queryFn: () => filterMedicalDocuments({ user_email: targetEmail }, '-upload_date', 50),
     enabled: !!targetEmail,
   });
 
   const deleteMutation = useMutation({
-    // @ts-ignore
-    mutationFn: (id) => base44.entities.MedicalDocument.delete(id),
+    mutationFn: (id) => deleteDocument(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['medicalDocs'] });
       toast.success('Document deleted');
     },
   });
 
-  // @ts-ignore
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) setSelectedFile(file);
@@ -101,19 +95,12 @@ export default function MedicalDocuments() {
     if (!selectedFile || !user) return;
     setUploading(true);
     try {
-      // @ts-ignore
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: selectedFile });
-      // @ts-ignore
-      await base44.entities.MedicalDocument.create({
-        // @ts-ignore
-        user_email: user.email,
-        file_url,
-        // @ts-ignore
-        file_name: selectedFile.name,
-        document_type: form.document_type || 'other',
-        notes: form.notes || undefined,
-        upload_date: new Date().toISOString(),
-      });
+      await uploadDocument(
+        selectedFile,
+        user.email,
+        form.document_type || 'other',
+        form.notes || ''
+      );
       queryClient.invalidateQueries({ queryKey: ['medicalDocs'] });
       toast.success('Document uploaded! 📄');
       setShowForm(false);
@@ -142,9 +129,7 @@ export default function MedicalDocuments() {
           {isViewer && <p className="text-xs text-slate-400">Viewing: {targetEmail}</p>}
         </div>
         {!isViewer && (
-          <
-// @ts-ignore
-          Button
+          <Button
             onClick={() => setShowForm(true)}
             className="rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-md gap-2"
             size="sm"
@@ -157,9 +142,7 @@ export default function MedicalDocuments() {
       {/* Child selector for doctors/parents */}
       {isViewer && linkedChildren.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {linkedChildren.map(
-// @ts-ignore
-          em => (
+          {linkedChildren.map(em => (
             <button
               key={em}
               onClick={() => setSelectedChildEmail(em)}
@@ -169,9 +152,7 @@ export default function MedicalDocuments() {
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-teal-50'
               }`}
             >
-              🧒 {allUsers.find(
-// @ts-ignore
-              u => u.email === em)?.full_name || em}
+              🧒 {allUsers.find(u => u.email === em)?.full_name || em}
             </button>
           ))}
         </div>
@@ -189,19 +170,14 @@ export default function MedicalDocuments() {
             <h2 className="font-bold text-slate-800">Upload New Document</h2>
 
             <div
-              // @ts-ignore
               onClick={() => fileRef.current?.click()}
               className="border-2 border-dashed border-teal-200 rounded-xl p-6 text-center cursor-pointer hover:bg-teal-50 transition-colors"
             >
               {selectedFile ? (
                 <div>
                   <FileText className="w-8 h-8 text-teal-500 mx-auto mb-2" />
-                  <p className="font-medium text-slate-700 text-sm">{selectedFile.
-// @ts-ignore
-                  name}</p>
-                  <p className="text-xs text-slate-400">{(selectedFile.
-// @ts-ignore
-                  size / 1024).toFixed(1)} KB</p>
+                  <p className="font-medium text-slate-700 text-sm">{selectedFile.name}</p>
+                  <p className="text-xs text-slate-400">{(selectedFile.size / 1024).toFixed(1)} KB</p>
                 </div>
               ) : (
                 <div>
@@ -214,36 +190,24 @@ export default function MedicalDocuments() {
             </div>
 
             <div className="space-y-2">
-              <
-// @ts-ignore
-              Label>Document Type</Label>
+              <Label>Document Type</Label>
               <Select value={form.document_type} onValueChange={v => setForm(f => ({ ...f, document_type: v }))}>
-                <
-// @ts-ignore
-                SelectTrigger className="rounded-xl">
+                <SelectTrigger className="rounded-xl">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
-                <
-// @ts-ignore
-                SelectContent>
+                <SelectContent>
                   {Object.entries(docTypeLabels).map(([val, label]) => (
-                    <
-// @ts-ignore
-                    SelectItem key={val} value={val}>{label}</SelectItem>
+                    <SelectItem key={val} value={val}>{label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <
-// @ts-ignore
-              Label>Notes (optional)</Label>
+              <Label>Notes (optional)</Label>
               <Textarea
-                // @ts-ignore
                 placeholder="e.g. HbA1c from April 2026..."
                 value={form.notes}
-                // @ts-ignore
                 onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                 className="rounded-xl"
                 rows={2}
@@ -251,18 +215,14 @@ export default function MedicalDocuments() {
             </div>
 
             <div className="flex gap-2">
-              <
-// @ts-ignore
-              Button
+              <Button
                 variant="outline"
                 onClick={() => { setShowForm(false); setSelectedFile(null); }}
                 className="flex-1 rounded-xl"
               >
                 Cancel
               </Button>
-              <
-// @ts-ignore
-              Button
+              <Button
                 onClick={handleUpload}
                 disabled={!selectedFile || uploading}
                 className="flex-1 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
@@ -287,25 +247,19 @@ export default function MedicalDocuments() {
         </div>
       ) : (
         <div className="space-y-3">
-          {documents.map(
-// @ts-ignore
-          doc => (
+          {documents.map(doc => (
             <motion.div
               key={doc.id}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-4 shadow-sm"
             >
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${
-// @ts-ignore
-              docTypeColors[doc.document_type] || docTypeColors.other} flex items-center justify-center shrink-0 shadow-md`}>
+              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${docTypeColors[doc.document_type] || docTypeColors.other} flex items-center justify-center shrink-0 shadow-md`}>
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-slate-800 text-sm truncate">{doc.file_name}</p>
-                <p className="text-xs text-slate-400">{
-// @ts-ignore
-                docTypeLabels[doc.document_type] || '📄 Other'}</p>
+                <p className="text-xs text-slate-400">{docTypeLabels[doc.document_type] || '📄 Other'}</p>
                 {doc.notes && <p className="text-xs text-slate-500 mt-0.5 truncate">{doc.notes}</p>}
                 <p className="text-xs text-slate-300 mt-0.5">{format(new Date(doc.upload_date), 'dd MMM yyyy')}</p>
               </div>
@@ -336,3 +290,4 @@ export default function MedicalDocuments() {
     </div>
   );
 }
+

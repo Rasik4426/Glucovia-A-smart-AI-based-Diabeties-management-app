@@ -1,16 +1,67 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3, Brain, Loader2, TrendingUp, Target, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import GlucoseChart from '../components/child/GlucoseChart';
+import GlucoseChart from '@/components/child/GlucoseChart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, subDays } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
+import {
+  me, updateMe, isAuthenticated, logout, navigateToLogin,
+  listUsers, filterUsers, createUser,
+  createGlucoseLog, filterGlucoseLogs,
+  createInsulinLog, filterInsulinLogs,
+  createMealLog, filterMealLogs,
+  createReminder, filterParentReminders, updateParentReminder,
+  sendMessage, filterChatMessages,
+  filterMedicalDocuments, deleteDocument, uploadFile,
+  createReward,
+  filterReminders, createSelfReminder, updateSelfReminder, deleteSelfReminder
+} from '@/api/api';
 
 const COLORS = ['#14b8a6', '#f59e0b', '#8b5cf6', '#ec4899'];
+
+
+function generateLocalInsight(summary) {
+  const { avg_glucose, in_range_pct, low_count, high_count, total_carbs, total_insulin, meals_logged, period } = summary;
+  
+  let insights = [];
+  
+  // Glucose control summary
+  if (in_range_pct >= 70) {
+    insights.push('🌟 **Great job!** Your glucose is in range most of the time. Keep up the excellent work!');
+  } else if (in_range_pct >= 50) {
+    insights.push('📊 **Doing okay!** About half your readings are in range. There\'s room for improvement.');
+  } else {
+    insights.push('⚠️ **Needs attention.** Many readings are outside the target range. Talk to your doctor or parent.');
+  }
+  
+  insights.push('');
+  
+  // Patterns
+  if (low_count > high_count && low_count > 2) {
+    insights.push('🍬 **Watch for lows!** You\'ve had several low readings. Make sure to carry snacks.');
+  } else if (high_count > low_count && high_count > 2) {
+    insights.push('💉 **High readings spotted.** Consider checking insulin timing and carb counting.');
+  }
+  
+  if (meals_logged > 0 && total_carbs > 0) {
+    const avgCarbs = Math.round(total_carbs / meals_logged);
+    insights.push(`🍽️ You averaged **${avgCarbs}g carbs** per meal. Great tracking!`);
+  }
+  
+  insights.push('');
+  
+  // Tips
+  insights.push('💡 **Tips:**');
+  insights.push('1. 🧘 Try to log meals around the same time each day.');
+  insights.push('2. 💧 Drink water and stay active — it helps glucose stay steady!');
+  insights.push('3. 🎉 Celebrate small wins. Every in-range reading is a victory!');
+  
+  return insights.join('\\n');
+}
 
 export default function Reports() {
   const [period, setPeriod] = useState('7');
@@ -19,7 +70,7 @@ export default function Reports() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => me(),
   });
 
   const email = user?.email;
@@ -28,19 +79,19 @@ export default function Reports() {
 
   const { data: glucoseLogs = [] } = useQuery({
     queryKey: ['glucoseLogs', targetEmail],
-    queryFn: () => base44.entities.GlucoseLog.filter({ user_email: targetEmail }, '-log_date', 200),
+    queryFn: () => filterGlucoseLogs({ user_email: targetEmail }, '-log_date', 200),
     enabled: !!targetEmail,
   });
 
   const { data: mealLogs = [] } = useQuery({
     queryKey: ['mealLogs', targetEmail],
-    queryFn: () => base44.entities.MealLog.filter({ user_email: targetEmail }, '-log_date', 200),
+    queryFn: () => filterMealLogs({ user_email: targetEmail }, '-log_date', 200),
     enabled: !!targetEmail,
   });
 
   const { data: insulinLogs = [] } = useQuery({
     queryKey: ['insulinLogs', targetEmail],
-    queryFn: () => base44.entities.InsulinLog.filter({ user_email: targetEmail }, '-log_date', 200),
+    queryFn: () => filterInsulinLogs({ user_email: targetEmail }, '-log_date', 200),
     enabled: !!targetEmail,
   });
 
@@ -85,16 +136,8 @@ export default function Reports() {
       meals_logged: filteredMeals.length,
     };
 
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a friendly diabetes health assistant for a child (age 12+). Analyze this health data and provide:
-1. A brief summary of their glucose control
-2. Any patterns or concerns you notice
-3. 2-3 simple, encouraging tips
-
-Be encouraging, use simple language, and add relevant emojis.
-
-Health data: ${JSON.stringify(summary)}`,
-    });
+    // Local AI insight (no external LLM - uses simple template analysis)
+    const result = generateLocalInsight(summary);
 
     setAiInsight(result);
     setLoadingAI(false);

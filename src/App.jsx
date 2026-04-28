@@ -1,10 +1,10 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClientInstance } from '@/lib/query-client'
+import { queryClientInstance } from './lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { AuthProvider, useAuth } from './lib/AuthContext';
+import UserNotRegisteredError from './components/UserNotRegisteredError';
 import { Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
@@ -20,7 +20,7 @@ import Settings from './pages/Settings';
 import Education from './pages/Education';
 import DoctorChat from './pages/DoctorChat';
 import MedicalDocuments from './pages/MedicalDocuments';
-import { startSyncListener } from '@/lib/syncManager';
+import { startSyncListener } from './lib/syncManager';
 
 // Start background sync once (fires immediately if online with pending entries)
 import { useEffect } from "react";
@@ -111,3 +111,4 @@ function App() {
 }
 
 export default App
+
