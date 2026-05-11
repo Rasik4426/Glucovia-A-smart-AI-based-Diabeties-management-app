@@ -37,6 +37,10 @@ Glucovia is a modern health tracking application designed to help children with 
 
 ---
 
+direct working link 
+https://glucovia2.base44.app 
+
+
 ## ⚙️ Setup Instructions
 
 ### 1. Clone the repository
